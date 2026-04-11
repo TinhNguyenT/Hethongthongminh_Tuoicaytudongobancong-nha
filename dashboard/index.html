@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Irrigation Dashboard</title>
+    <title>Dashboard Tưới Cây Thông Minh</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,8 +21,8 @@
             <div class="logo">
 
                 <div>
-                    <h1>Smart Irrigation</h1>
-                    <p>AI-Powered Balcony System</p>
+                    <h1>Hệ Thống Tưới Cây</h1>
+                    <p>Công nghệ AI cho Ban công & Nhà ở</p>
                 </div>
             </div>
             <div class="time-widget">
@@ -36,7 +36,7 @@
             <div class="glass-panel card sensor-card">
 
                 <div class="card-info">
-                    <h3>Temperature</h3>
+                    <h3>Nhiệt độ</h3>
                     <div class="value">
                         <span id="temp-val">--</span><span class="unit">°C</span>
                     </div>
@@ -46,7 +46,7 @@
             <div class="glass-panel card sensor-card">
 
                 <div class="card-info">
-                    <h3>Air Humidity</h3>
+                    <h3>Độ ẩm không khí</h3>
                     <div class="value">
                         <span id="air-humid-val">--</span><span class="unit">%</span>
                     </div>
@@ -56,18 +56,18 @@
             <div class="glass-panel card sensor-card highlight">
 
                 <div class="card-info">
-                    <h3>Soil Moisture</h3>
+                    <h3>Độ ẩm đất</h3>
                     <div class="value">
                         <span id="soil-moisture-val">--</span><span class="unit">%</span>
                     </div>
-                    <div class="status-badge" id="soil-status">Optimal</div>
+                    <div class="status-badge" id="soil-status">Tối ưu</div>
                 </div>
             </div>
 
             <div class="glass-panel card sensor-card">
 
                 <div class="card-info">
-                    <h3>Rain Probability</h3>
+                    <h3>Xác suất mưa</h3>
                     <div class="value">
                         <span id="rain-prob-val">--</span><span class="unit">%</span>
                     </div>
@@ -76,16 +76,16 @@
 
             <!-- Main Control / Pump -->
             <div class="glass-panel card control-card">
-                <h3>Pump Control</h3>
+                <h3>Điều khiển Máy bơm</h3>
                 <div class="pump-status-container">
                     <div class="pump-indicator" id="pump-indicator">
                         <div class="ripple"></div>
                     </div>
                     <h2 id="pump-text">OFF</h2>
                 </div>
-                <p id="pump-reason">System is Idle</p>
+                <p id="pump-reason">Hệ thống đang nghỉ</p>
                 <div class="toggle-container">
-                    <span>Manual Override</span>
+                    <span>Chế độ thủ công</span>
                     <label class="switch">
                         <input type="checkbox" id="manual-pump-toggle">
                         <span class="slider round"></span>
@@ -95,7 +95,7 @@
 
             <!-- Chart -->
             <div class="glass-panel card chart-card">
-                <h3>Soil Moisture History (24h)</h3>
+                <h3>Lịch sử độ ẩm đất (24h)</h3>
                 <div class="chart-container">
                     <canvas id="moistureChart"></canvas>
                 </div>

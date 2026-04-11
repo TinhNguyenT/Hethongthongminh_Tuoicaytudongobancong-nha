@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import time
 
-def fetch_vietnam_weather_data(lat=10.82, lon=106.63, start="20260101", end="20260401"):
+def fetch_vietnam_weather_data(lat=10.82, lon=106.63, start="20260101", end="20260410"):
     """
     Tải dữ liệu thời tiết thực tế từ NASA POWER API cho tọa độ tại Việt Nam.
     Parameters:
@@ -30,8 +30,12 @@ def fetch_vietnam_weather_data(lat=10.82, lon=106.63, start="20260101", end="202
             'Humidity_pct': [base_data['RH2M'][d] for d in dates],
             'Precipitation_mm': [base_data['PRECTOTCORR'][d] for d in dates]
         })
+
+        # XỬ LÝ LỖI -999: Thay thế các giá trị -999 bằng giá trị của ngày trước đó
+        df.replace(-999, float('nan'), inplace=True)
+        df.ffill(inplace=True) # Điền giá trị gần nhất vào các ô trống
         
-        print(f"Đã tải thành công {len(df)} ngày dữ liệu thực tế tại Việt Nam.")
+        print(f"Đã tải và làm sạch {len(df)} ngày dữ liệu từ NASA.")
         return df
         
     except Exception as e:
@@ -45,7 +49,7 @@ def simulate_moisture_from_real_weather(weather_df):
     if weather_df is None:
         return
     
-    print("[*] Đang bắt đầu mô phỏng độ ẩm đất dựa trên thời tiết thật...")
+    print("Đang bắt đầu mô phỏng độ ẩm đất dựa trên thời tiết thật...")
     
     soil_moisture = []
     pump_status = []
@@ -94,7 +98,7 @@ if __name__ == "__main__":
         final_df = simulate_moisture_from_real_weather(vn_weather)
         
         # Bước 3: Lưu file
-        output_file = "vietnam_smart_irrigation_dataset.csv"
+        output_file = "data/vietnam_smart_irrigation_dataset.csv"
         final_df.to_csv(output_file, index=False)
         
         print(f"\nTHÀNH CÔNG: Dataset tổng hợp đã được lưu tại: {output_file}")
@@ -102,4 +106,4 @@ if __name__ == "__main__":
         print("Xem thử 5 dòng dữ liệu đầu tiên:")
         print(final_df.head())
     else:
-        print("[!] Không thể tiếp tục do lỗi tải dữ liệu.")
+        print("Không thể tiếp tục do lỗi tải dữ liệu.")

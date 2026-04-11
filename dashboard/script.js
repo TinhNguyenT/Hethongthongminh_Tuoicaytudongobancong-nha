@@ -3,8 +3,8 @@
 // --- Clock & Date ---
 function updateTime() {
     const now = new Date();
-    document.getElementById('current-time').textContent = now.toLocaleTimeString('en-US', { hour12: false });
-    document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+    document.getElementById('current-time').textContent = now.toLocaleTimeString('vi-VN', { hour12: false });
+    document.getElementById('current-date').textContent = now.toLocaleDateString('vi-VN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
 }
 setInterval(updateTime, 1000);
 updateTime();
@@ -19,7 +19,7 @@ const chart = new Chart(ctx, {
     data: {
         labels: [], // Will be populated from API
         datasets: [{
-            label: 'Soil Moisture (%)',
+            label: 'Độ ẩm đất (%)',
             data: [], // Will be populated from API
             borderColor: '#10b981',
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -80,34 +80,34 @@ async function refreshData() {
         // 3. Update Soil Status Badge
         const soil = current.Soil_Moisture_pct;
         if (soil < 40) {
-            soilStatusBadge.textContent = "Dry";
+            soilStatusBadge.textContent = "Khô";
             soilStatusBadge.style.background = "rgba(239, 68, 68, 0.2)";
             soilStatusBadge.style.color = "var(--accent-danger)";
         } else if (soil > 80) {
-            soilStatusBadge.textContent = "Wet";
+            soilStatusBadge.textContent = "Ẩm";
             soilStatusBadge.style.background = "rgba(59, 130, 246, 0.2)";
             soilStatusBadge.style.color = "var(--accent-blue)";
         } else {
-            soilStatusBadge.textContent = "Optimal";
+            soilStatusBadge.textContent = "Tối ưu";
             soilStatusBadge.style.background = "rgba(16, 185, 129, 0.2)";
             soilStatusBadge.style.color = "var(--accent-green)";
         }
 
         // 4. Update Pump logic (AI from Fuzzy results)
-        // If the AI Fuzzy Duration > 0, we consider the pump ACTIVE
-        const isAIPumpOn = current.Fuzzy_Duration_min > 0;
+        // If the AI Hybrid Duration > 0, we consider the pump ACTIVE
+        const isAIPumpOn = current.Hybrid_Decision_min > 0;
         const isPumpRunning = manualToggle.checked || isAIPumpOn;
 
         if (isPumpRunning) {
             pumpIndicatorContainer.classList.add('active');
-            pumpText.textContent = "ON";
+            pumpText.textContent = "BẬT";
             pumpText.style.color = "var(--accent-blue)";
-            pumpReason.textContent = manualToggle.checked ? "Manual Control" : `Fuzzy AI: Watering ${current.Fuzzy_Duration_min} min`;
+            pumpReason.textContent = manualToggle.checked ? "Điều khiển tay" : `AI: Đang tưới ${current.Hybrid_Decision_min} phút`;
         } else {
             pumpIndicatorContainer.classList.remove('active');
-            pumpText.textContent = "OFF";
+            pumpText.textContent = "TẮT";
             pumpText.style.color = "var(--text-main)";
-            pumpReason.textContent = "AI Decision: No irrigation needed";
+            pumpReason.textContent = "AI: Đất đủ ẩm, không cần tưới";
         }
 
     } catch (err) {
