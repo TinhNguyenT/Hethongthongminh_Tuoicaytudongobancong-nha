@@ -11,7 +11,7 @@ def fetch_vietnam_weather_data(lat=10.82, lon=106.63, start="20260101", end="202
     - RH2M: Relative Humidity at 2 Meters (%)
     - PRECTOTCORR: Precipitation (mm/day)
     """
-    print(f"[*] Đang kết nối tới NASA POWER API để lấy dữ liệu cho tọa độ ({lat}, {lon})...")
+    print(f"Đang kết nối tới NASA POWER API để lấy dữ liệu cho tọa độ ({lat}, {lon})...")
     
     url = f"https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,RH2M,PRECTOTCORR&community=AG&longitude={lon}&latitude={lat}&start={start}&end={end}&format=JSON"
     
@@ -31,11 +31,11 @@ def fetch_vietnam_weather_data(lat=10.82, lon=106.63, start="20260101", end="202
             'Precipitation_mm': [base_data['PRECTOTCORR'][d] for d in dates]
         })
         
-        print(f"[+] Đã tải thành công {len(df)} ngày dữ liệu thực tế tại Việt Nam.")
+        print(f"Đã tải thành công {len(df)} ngày dữ liệu thực tế tại Việt Nam.")
         return df
         
     except Exception as e:
-        print(f"[!] Lỗi khi tải dữ liệu: {e}")
+        print(f"Lỗi khi tải dữ liệu: {e}")
         return None
 
 def simulate_moisture_from_real_weather(weather_df):
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         output_file = "vietnam_smart_irrigation_dataset.csv"
         final_df.to_csv(output_file, index=False)
         
-        print(f"\n[THÀNH CÔNG] Dataset tổng hợp đã được lưu tại: {output_file}")
+        print(f"\nTHÀNH CÔNG: Dataset tổng hợp đã được lưu tại: {output_file}")
         print("-" * 50)
         print("Xem thử 5 dòng dữ liệu đầu tiên:")
         print(final_df.head())

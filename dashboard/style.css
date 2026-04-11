@@ -87,9 +87,7 @@ body {
     gap: 15px;
 }
 
-.logo .icon {
-    font-size: 2.5rem;
-}
+
 
 .logo h1 {
     font-size: 1.5rem;
@@ -139,19 +137,9 @@ body {
 .sensor-card {
     display: flex;
     align-items: flex-start;
-    gap: 16px;
 }
 
-.card-icon {
-    font-size: 2rem;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.05);
-}
+
 
 .card-info h3 {
     font-size: 0.9rem;
