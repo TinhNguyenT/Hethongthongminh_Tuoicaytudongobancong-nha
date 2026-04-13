@@ -37,11 +37,20 @@ class FuzzyIrrigationController:
 
     def _setup_rules(self):
         rules = [
+            # Khi đất ướt -> Không bao giờ tưới
             ctrl.Rule(self.moisture['wet'], self.duration['none']),
+            
+            # Khi đất khô
             ctrl.Rule(self.moisture['dry'] & self.temp['hot'] & self.rain['none'], self.duration['long']),
-            ctrl.Rule(self.moisture['dry'] & self.rain['heavy'], self.duration['none']),
+            ctrl.Rule(self.moisture['dry'] & self.temp['warm'] & self.rain['none'], self.duration['medium']),
+            ctrl.Rule(self.moisture['dry'] & self.temp['cool'] & self.rain['none'], self.duration['medium']),
             ctrl.Rule(self.moisture['dry'] & self.rain['light'], self.duration['medium']),
-            ctrl.Rule(self.moisture['moist'] & self.rain['none'], self.duration['short']),
+            ctrl.Rule(self.moisture['dry'] & self.rain['heavy'], self.duration['none']),
+            
+            # Khi đất hơi ẩm (moist)
+            ctrl.Rule(self.moisture['moist'] & self.temp['hot'] & self.rain['none'], self.duration['medium']),
+            ctrl.Rule(self.moisture['moist'] & self.temp['warm'] & self.rain['none'], self.duration['short']),
+            ctrl.Rule(self.moisture['moist'] & self.temp['cool'] & self.rain['none'], self.duration['none']),
             ctrl.Rule(self.moisture['moist'] & self.rain['heavy'], self.duration['none']),
         ]
         system = ctrl.ControlSystem(rules)

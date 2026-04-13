@@ -1,17 +1,17 @@
 import requests
 import pandas as pd
-import json
-import time
+import os
+import sys
 
-def fetch_vietnam_weather_data(lat=10.82, lon=106.63, start="20260101", end="20260410"):
+def fetch_nasa_data(lat=10.82, lon=106.63, start="20260101", end="20260413", label="weather"):
     """
-    Tải dữ liệu thời tiết thực tế từ NASA POWER API cho tọa độ tại Việt Nam.
+    Fetch weather data from NASA POWER API.
     Parameters:
-    - T2M: Temperature at 2 Meters (C)
-    - RH2M: Relative Humidity at 2 Meters (%)
+    - T2M: Temp at 2m (C)
+    - RH2M: Relative Humidity at 2m (%)
     - PRECTOTCORR: Precipitation (mm/day)
     """
-    print(f"Đang kết nối tới NASA POWER API để lấy dữ liệu cho tọa độ ({lat}, {lon})...")
+    print(f"Connecting to NASA POWER API for {label} ({start} to {end})...")
     
     url = f"https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,RH2M,PRECTOTCORR&community=AG&longitude={lon}&latitude={lat}&start={start}&end={end}&format=JSON"
     
@@ -20,7 +20,6 @@ def fetch_vietnam_weather_data(lat=10.82, lon=106.63, start="20260101", end="202
         response.raise_for_status()
         data = response.json()
         
-        # Trích xuất dữ liệu chuỗi thời gian
         base_data = data['properties']['parameter']
         dates = list(base_data['T2M'].keys())
         
@@ -31,79 +30,34 @@ def fetch_vietnam_weather_data(lat=10.82, lon=106.63, start="20260101", end="202
             'Precipitation_mm': [base_data['PRECTOTCORR'][d] for d in dates]
         })
 
-        # XỬ LÝ LỖI -999: Thay thế các giá trị -999 bằng giá trị của ngày trước đó
         df.replace(-999, float('nan'), inplace=True)
-        df.ffill(inplace=True) # Điền giá trị gần nhất vào các ô trống
+        df.ffill(inplace=True) 
         
-        print(f"Đã tải và làm sạch {len(df)} ngày dữ liệu từ NASA.")
+        print(f"Successfully fetched {len(df)} days of data for {label}.")
         return df
         
     except Exception as e:
-        print(f"Lỗi khi tải dữ liệu: {e}")
+        print(f"Error fetching {label} data: {e}")
         return None
 
-def simulate_moisture_from_real_weather(weather_df):
-    """
-    Mô phỏng độ ẩm đất dựa trên dữ liệu khí tượng thực tế.
-    """
-    if weather_df is None:
-        return
-    
-    print("Đang bắt đầu mô phỏng độ ẩm đất dựa trên thời tiết thật...")
-    
-    soil_moisture = []
-    pump_status = []
-    
-    current_moisture = 65.0 # Độ ẩm khởi đầu
-    
-    for index, row in weather_df.iterrows():
-        temp = row['Temp_C']
-        humid = row['Humidity_pct']
-        rain = row['Precipitation_mm']
-        
-        # 1. Tính toán bốc hơi (Evapotranspiration đơn giản)
-        # Nhiệt độ cao + Độ ẩm thấp = Bốc hơi nhanh
-        evap_factor = (temp / 35.0) * (1.1 - (humid / 100.0)) * 2.5
-        current_moisture -= evap_factor
-        
-        # 2. Ảnh hưởng của mưa (1mm mưa ~ tăng 2% độ ẩm đất, giới hạn 15% tăng/ngày)
-        if rain > 0.1:
-            rain_gain = min(rain * 2.0, 15.0)
-            current_moisture += rain_gain
-            
-        # 3. Logic Máy bơm thông minh
-        pump_on = 0
-        # Nếu đất khô (< 45%) VÀ không có mưa đáng kể (< 2mm)
-        if current_moisture < 45.0 and rain < 2.0:
-            pump_on = 1
-            current_moisture += 20.0 # Bơm đẩy độ ẩm lên
-            
-        # Giới hạn độ ẩm trong khoảng [15%, 98%]
-        current_moisture = max(15.0, min(98.0, current_moisture))
-        
-        soil_moisture.append(round(current_moisture, 2))
-        pump_status.append(pump_on)
-        
-    weather_df['Soil_Moisture_pct'] = soil_moisture
-    weather_df['Pump_Action'] = pump_status
-    
-    return weather_df
+def main():
+    # Set encoding for Windows logs
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except:
+        pass
+
+    # 1. Fetch Historic Weather (2020) to match Soil Sensors
+    weather_2020 = fetch_nasa_data(start="20200301", end="20200331", label="2020_Historic")
+    if weather_2020 is not None:
+        weather_2020.to_csv("data/vietnam_weather_2020.csv", index=False)
+        print("Saved data/vietnam_weather_2020.csv")
+
+    # 2. Fetch Current Weather (2026) for Demo
+    weather_2026 = fetch_nasa_data(start="20260101", end="20260413", label="2026_Current")
+    if weather_2026 is not None:
+        weather_2026.to_csv("data/vietnam_weather_2026.csv", index=False)
+        print("Saved data/vietnam_weather_2026.csv")
 
 if __name__ == "__main__":
-    # Bước 1: Lấy dữ liệu VN thật
-    vn_weather = fetch_vietnam_weather_data()
-    
-    if vn_weather is not None:
-        # Bước 2: Sinh dữ liệu Soil Moisture tương ứng
-        final_df = simulate_moisture_from_real_weather(vn_weather)
-        
-        # Bước 3: Lưu file
-        output_file = "data/vietnam_smart_irrigation_dataset.csv"
-        final_df.to_csv(output_file, index=False)
-        
-        print(f"\nTHÀNH CÔNG: Dataset tổng hợp đã được lưu tại: {output_file}")
-        print("-" * 50)
-        print("Xem thử 5 dòng dữ liệu đầu tiên:")
-        print(final_df.head())
-    else:
-        print("Không thể tiếp tục do lỗi tải dữ liệu.")
+    main()

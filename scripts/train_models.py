@@ -1,70 +1,122 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.neural_network import MLPRegressor
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import r2_score, mean_squared_error
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import joblib
 import os
+import sys
 
-def train_rain_forecast_model(dataset_path='data/vietnam_smart_irrigation_dataset.csv'):
+def train_irrigation_model(dataset_path='data/final_training_dataset.csv'):
     """
-    Quy trình huấn luyện mạng MLP để dự báo lượng mưa dựa trên thời tiết.
+    Quy trình huấn luyện mạng MLP (Phân loại) để ra quyết định tưới cây.
     """
     if not os.path.exists(dataset_path):
-        print(f"Lỗi: Không tìm thấy file {dataset_path}")
+        print(f"Error: Missing {dataset_path}")
         return
 
     # 1. TẢI DỮ LIỆU
-    print("Đang tải dữ liệu huấn luyện...")
+    print(f"Loading dataset from {dataset_path}...")
     df = pd.read_csv(dataset_path)
     
     # 2. LỰA CHỌN TÍNH NĂNG (FEATURES) VÀ MỤC TIÊU (TARGET)
-    # Chúng ta dự báo Precipitation (Lượng mưa) dựa trên Temp và Humidity
-    X = df[['Temp_C', 'Humidity_pct']]
-    y = df['Precipitation_mm']
+    X = df[['air_temp', 'air_humidity', 'rain_mm', 'soil_moisture']]
+    y = df['irrigation']
+
+    # --- CÂN BẰNG DỮ LIỆU (UNDERSAMPLING) ---
+    print("Balancing dataset (Undersampling)...")
+    df_0 = df[df.irrigation == 0]
+    df_1 = df[df.irrigation == 1]
+    
+    # Lấy số lượng mẫu của lớp ít nhất (lớp 1)
+    n_samples = len(df_1)
+    
+    # Lấy ngẫu nhiên số lượng tương đương từ lớp 0
+    df_0_balanced = df_0.sample(n=n_samples, random_state=42)
+    
+    # Gộp lại thành dataset cân bằng 50/50
+    df_balanced = pd.concat([df_0_balanced, df_1], axis=0)
+    
+    # --- DATA AUGMENTATION (Sinh dữ liệu giả lập để mở rộng vùng hiểu biết của AI) ---
+    print("Generating Synthetic Data to prevent Overfitting on narrowly ranged data...")
+    import sys
+    sys.path.append(os.getcwd())
+    from core.fuzzy_logic import FuzzyIrrigationController
+    fuzzy = FuzzyIrrigationController()
+    
+    np.random.seed(42)
+    n_synthetic = 5000
+    
+    # Tạo các mẫu thời tiết và đất cực đoan ngẫu nhiên
+    syn_temp = np.random.uniform(15, 45, n_synthetic)
+    syn_humid = np.random.uniform(20, 100, n_synthetic)
+    syn_rain = np.random.uniform(0, 50, n_synthetic)
+    syn_soil = np.random.uniform(0.0, 1.0, n_synthetic)
+    
+    synthetic_df = pd.DataFrame({
+        'air_temp': syn_temp,
+        'air_humidity': syn_humid,
+        'rain_mm': syn_rain,
+        'soil_moisture': syn_soil
+    })
+    
+    # Tự động dán nhãn cho dữ liệu sinh ra
+    def get_synth_label(row):
+        duration = fuzzy.decide(row['soil_moisture'] * 100, row['air_temp'], row['rain_mm'])
+        return 1 if duration > 13 else 0
+        
+    synthetic_df['irrigation'] = synthetic_df.apply(get_synth_label, axis=1)
+    
+    # Gộp dữ liệu thật và dữ liệu sinh ra
+    df_final = pd.concat([df_balanced, synthetic_df], axis=0)
+    
+    X_final = df_final[['air_temp', 'air_humidity', 'rain_mm', 'soil_moisture']]
+    y_final = df_final['irrigation']
+    
+    print(f"Final training distribution:\n{y_final.value_counts()}")
 
     # 3. TIỀN XỬ LÝ (PREPROCESSING)
-    # Chia tập Train/Test (80-20)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X_final, y_final, test_size=0.2, random_state=42)
 
-    # Chuẩn hóa dữ liệu (Scaling)
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    # 4. KHỞI TẠO VÀ HUẤN LUYỆN MẠNG MLP
-    print("Bắt đầu quy trình huấn luyện mạng MLP (Neural Network)...")
-    # Cấu trúc: 1 lớp ẩn với 100 nơ-ron
-    mlp = MLPRegressor(
-        hidden_layer_sizes=(100, 50),
+    # 4. KHỞI TẠO VÀ HUẤN LUYỆN MLP CLASSIFIER (Nâng cấp cấu trúc)
+    print("Training Upgraded MLP Classifier (128x64x32)...")
+    mlp = MLPClassifier(
+        hidden_layer_sizes=(128, 64, 32),
         activation='relu',
         solver='adam',
         max_iter=2000,
         random_state=42,
-        verbose=True # Hiện quá trình học
+        verbose=False
     )
 
     mlp.fit(X_train_scaled, y_train)
 
-    # 5. ĐÁNH GIÁ MÔ HÌNH (EVALUATION)
+    # 5. ĐÁNH GIÁ MÔ HÌNH
     y_pred = mlp.predict(X_test_scaled)
-    r2 = r2_score(y_test, y_pred)
-    mse = mean_squared_error(y_test, y_pred)
+    acc = accuracy_score(y_test, y_pred)
     
-    print("\n" + "-"*30)
-    print(f"KẾT QUẢ HUẤN LUYỆN:")
-    print(f"Độ khớp (R2 Score): {r2:.4f}")
-    print(f"Sai số trung bình (MSE): {mse:.4f}")
-    print("-"*30)
+    print("\n" + "="*30)
+    print(f"TRAINING RESULTS (Balanced Set):")
+    print(f"Accuracy: {acc:.4f} ({acc*100:.2f}%)")
+    print("\nClassification Report:")
+    print(classification_report(y_test, y_pred))
+    print("="*30)
 
     # 6. LƯU MÔ HÌNH VÀ SCALER
-    joblib.dump(mlp, 'models/mlp_model.pkl')
-    joblib.dump(scaler, 'models/scaler.pkl')
-    print("Đã lưu mô hình thành công tại: models/mlp_model.pkl")
+    if not os.path.exists('models'):
+        os.makedirs('models')
+        
+    joblib.dump(mlp, 'models/mlp_irrigation_model.pkl')
+    joblib.dump(scaler, 'models/irrigation_scaler.pkl')
+    print("Saved model to models/mlp_irrigation_model.pkl")
 
-    # 7. TRỰC QUAN HÓA (VISUALIZATION)
+    # 7. TRỰC QUAN HÓA
     plt.figure(figsize=(10, 6))
     plt.plot(mlp.loss_curve_)
     plt.title('MLP Training Loss Curve')
@@ -72,16 +124,10 @@ def train_rain_forecast_model(dataset_path='data/vietnam_smart_irrigation_datase
     plt.ylabel('Loss')
     plt.grid(True)
     plt.savefig('data/mlp_training_loss.png')
-    print("Đã lưu biểu đồ quá trình học: data/mlp_training_loss.png")
     
-    # Vẽ biểu đồ dự báo vs thực tế trên tập Test
-    plt.figure(figsize=(10, 6))
-    plt.plot(y_test.values[:50], label='Actual Rain', color='blue', alpha=0.6)
-    plt.plot(y_pred[:50], label='Predicted Rain', color='red', linestyle='dashed')
-    plt.title('Rain Forecast Accuracy (Test Set - First 50 samples)')
-    plt.legend()
-    plt.savefig('data/mlp_forecast_accuracy.png')
-    print("Đã lưu biểu đồ so sánh dự báo: data/mlp_forecast_accuracy.png")
-
 if __name__ == "__main__":
-    train_rain_forecast_model()
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except:
+        pass
+    train_irrigation_model()

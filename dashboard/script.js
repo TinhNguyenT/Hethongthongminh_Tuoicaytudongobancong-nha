@@ -1,4 +1,4 @@
-// Smart Irrigation Dashboard Script
+// Smart Irrigation Dashboard Script (AI-Powered Version)
 
 // --- Clock & Date ---
 function updateTime() {
@@ -17,10 +17,10 @@ Chart.defaults.font.family = 'Outfit';
 const chart = new Chart(ctx, {
     type: 'line',
     data: {
-        labels: [], // Will be populated from API
+        labels: [], 
         datasets: [{
             label: 'Độ ẩm đất (%)',
-            data: [], // Will be populated from API
+            data: [],
             borderColor: '#10b981',
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
             borderWidth: 3,
@@ -49,36 +49,30 @@ const pumpText = document.getElementById('pump-text');
 const pumpReason = document.getElementById('pump-reason');
 const soilStatusBadge = document.getElementById('soil-status');
 
-// --- Fetch REAL DATA from Python Backend ---
+// --- Fetch DATA from Python Backend ---
 async function refreshData() {
     try {
         const response = await fetch('/api/stats');
         const data = await response.json();
         
-        if (data.error) {
-            console.error("API Error:", data.error);
-            return;
-        }
-
         const current = data.current;
         const history = data.history;
 
         // 1. Update Labels and Chart Data
-        chart.data.labels = history.map(item => item.Date.split('-').slice(1).join('/'));
-        chart.data.datasets[0].data = history.map(item => item.Soil_Moisture_pct);
+        chart.data.labels = history.map(item => item.timestamp);
+        chart.data.datasets[0].data = history.map(item => item.soil_moisture * 100);
         chart.update();
 
         // 2. Update UI Cards
-        document.getElementById('temp-val').textContent = current.Temp_C.toFixed(1);
-        document.getElementById('air-humid-val').textContent = current.Humidity_pct.toFixed(0);
-        document.getElementById('soil-moisture-val').textContent = current.Soil_Moisture_pct.toFixed(1);
+        document.getElementById('temp-val').textContent = current.air_temp.toFixed(1);
+        document.getElementById('air-humid-val').textContent = current.air_humidity.toFixed(0);
+        document.getElementById('soil-moisture-val').textContent = (current.soil_moisture * 100).toFixed(1);
         
-        // Use Rain Precipitation as a rough rain prob for now
-        let rainProb = current.Precipitation_mm > 0 ? (current.Precipitation_mm * 10 + 20) : 5;
-        document.getElementById('rain-prob-val').textContent = Math.min(100, rainProb).toFixed(0);
+        // Rain - display predicted or actual rain
+        document.getElementById('rain-prob-val').textContent = current.rain_mm.toFixed(1);
 
         // 3. Update Soil Status Badge
-        const soil = current.Soil_Moisture_pct;
+        const soil = current.soil_moisture * 100;
         if (soil < 40) {
             soilStatusBadge.textContent = "Khô";
             soilStatusBadge.style.background = "rgba(239, 68, 68, 0.2)";
@@ -93,21 +87,20 @@ async function refreshData() {
             soilStatusBadge.style.color = "var(--accent-green)";
         }
 
-        // 4. Update Pump logic (AI from Fuzzy results)
-        // If the AI Hybrid Duration > 0, we consider the pump ACTIVE
-        const isAIPumpOn = current.Hybrid_Decision_min > 0;
+        // 4. Update Pump logic (AI from MLP results)
+        const isAIPumpOn = current.pump_status === 1;
         const isPumpRunning = manualToggle.checked || isAIPumpOn;
 
         if (isPumpRunning) {
             pumpIndicatorContainer.classList.add('active');
             pumpText.textContent = "BẬT";
             pumpText.style.color = "var(--accent-blue)";
-            pumpReason.textContent = manualToggle.checked ? "Điều khiển tay" : `AI: Đang tưới ${current.Hybrid_Decision_min} phút`;
+            pumpReason.textContent = manualToggle.checked ? "Điều khiển tay" : `AI MLP: Đang ra lệnh tưới`;
         } else {
             pumpIndicatorContainer.classList.remove('active');
             pumpText.textContent = "TẮT";
             pumpText.style.color = "var(--text-main)";
-            pumpReason.textContent = "AI: Đất đủ ẩm, không cần tưới";
+            pumpReason.textContent = "AI MLP: Đất đủ ẩm, không cần tưới";
         }
 
     } catch (err) {
