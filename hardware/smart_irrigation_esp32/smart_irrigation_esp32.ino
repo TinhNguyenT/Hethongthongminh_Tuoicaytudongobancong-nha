@@ -21,7 +21,8 @@ const char* serverUrl = "http://YOUR_COMPUTER_IP:5000/api/hardware";
 #define DHTPIN 4          // Chân nối với cảm biến DHT11/22
 #define DHTTYPE DHT11    // Đổi thành DHT22 nếu bạn dùng loại trắng
 #define SOIL_PIN 34       // Chân Analog nối với cảm biến độ ẩm đất
-#define PUMP_PIN 2        // Chân điều khiển Relay (Mặc định dùng đèn LED trên board ESP32 để test)
+#define WATER_PIN 35      // Chân Analog nối với cảm biến mực nước (MỚI)
+#define PUMP_PIN 2        // Chân điều khiển Relay
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -54,10 +55,11 @@ void loop() {
     float t = dht.readTemperature();
     float h = dht.readHumidity();
     int soilRaw = analogRead(SOIL_PIN);
+    int waterRaw = analogRead(WATER_PIN);
     
-    // Chuyển đổi giá trị Analog sang % (Giả định 4095 là khô, 0 là nước)
-    // Tùy cảm biến bạn cần hiệu chuẩn lại (Calibrate) các con số này
+    // Chuyển đổi giá trị Analog sang %
     float soilPct = map(soilRaw, 4095, 0, 0, 100);
+    float waterPct = map(waterRaw, 0, 4095, 0, 100); // 0 là cạn, 4095 là đầy (Tùy loại cảm biến)
 
     if (isnan(t) || isnan(h)) {
       Serial.println("Loi doc cam bien DHT!");
@@ -76,6 +78,7 @@ void loop() {
     doc["temp"] = t;
     doc["humidity"] = h;
     doc["soil_moisture"] = soilPct;
+    doc["water_level"] = waterPct;
 
     String requestBody;
     serializeJson(doc, requestBody);

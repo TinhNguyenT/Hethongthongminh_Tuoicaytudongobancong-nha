@@ -8,7 +8,8 @@ import {
   Power,
   Timer,
   History,
-  Activity
+  CircleGauge,
+  Activity,
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -80,6 +81,15 @@ function App() {
   };
 
   const soilStatus = getSoilStatus(current.soil_moisture);
+
+  // Logic xác định trạng thái nước
+  const getWaterStatus = (level) => {
+    if (level < 15) return { label: 'SẮP CẠN', class: 'danger' };
+    if (level < 40) return { label: 'THẤP', class: 'warning' };
+    return { label: 'ĐẦY', class: 'success' };
+  };
+
+  const waterStatus = getWaterStatus(current.water_level || 100);
 
   // Format thời gian hiển thị tiếng Việt
   const timeStr = localTime.toLocaleTimeString('vi-VN', { hour12: false });
@@ -171,6 +181,14 @@ function App() {
             status={soilStatus}
             isAlert={current.soil_moisture * 100 < 45}
           />
+          <Card
+            title="Mực nước"
+            value={(current.water_level || 100).toFixed(0)}
+            unit="%"
+            icon={<CircleGauge color="#3b82f6" size={20} />}
+            status={waterStatus}
+            isAlert={current.water_level < 15}
+          />
         </div>
 
         {/* Control Area */}
@@ -246,7 +264,7 @@ function App() {
 
         .sensor-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
+          grid-template-columns: repeat(5, 1fr);
           gap: 20px;
         }
 
@@ -291,6 +309,7 @@ function App() {
           border-radius: 10px;
         }
         .card-status.danger { background: #f43f5e22; color: #f43f5e; }
+        .card-status.warning { background: #f59e0b22; color: #f59e0b; }
         .card-status.info { background: #3b82f622; color: #3b82f6; }
         .card-status.success { background: #10b98122; color: #10b981; }
 
