@@ -10,12 +10,12 @@
 #include "DHT.h"
 
 // --- CẤU HÌNH WIFI (BẠN HÃY SỬA LẠI ĐÚNG VỚI WIFI NHÀ MÌNH) ---
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid = "Duykhang2";
+const char* password = "Comtam@456";
 
 // --- ĐỊA CHỈ SERVER (HÃY SỬA IP THEO MÁY TÍNH CHẠY APP.PY) ---
 // Ví dụ: http://192.168.1.5:5000/api/hardware
-const char* serverUrl = "http://YOUR_COMPUTER_IP:5000/api/hardware";
+const char* serverUrl = "http://192.168.10.:5000/api/hardware";
 
 // --- CẤU HÌNH CÁC CHÂN PIN (GPIO) ---
 #define DHTPIN 4          // Chân nối với cảm biến DHT11/22

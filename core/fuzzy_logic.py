@@ -57,12 +57,14 @@ class FuzzyIrrigationController:
             # NHÓM LUẬT ĐẤT RẤT KHÔ (Very Dry)
             ctrl.Rule(self.moisture['very_dry'] & self.temp['hot'], self.duration['long']),
             ctrl.Rule(self.moisture['very_dry'] & self.temp['warm'] & self.humidity['low'], self.duration['long']),
+            ctrl.Rule(self.moisture['very_dry'] & self.temp['warm'] & self.humidity['medium'], self.duration['medium']),
             ctrl.Rule(self.moisture['very_dry'] & self.temp['warm'] & self.humidity['high'], self.duration['medium']),
             ctrl.Rule(self.moisture['very_dry'] & self.temp['cool'], self.duration['medium']),
             ctrl.Rule(self.moisture['very_dry'] & self.rain['light'], self.duration['short']),
             
             # NHÓM LUẬT ĐẤT KHÔ (Dry)
             ctrl.Rule(self.moisture['dry'] & self.temp['hot'] & self.humidity['low'], self.duration['long']),
+            ctrl.Rule(self.moisture['dry'] & self.temp['hot'] & self.humidity['medium'], self.duration['medium']),
             ctrl.Rule(self.moisture['dry'] & self.temp['hot'] & self.humidity['high'], self.duration['medium']),
             ctrl.Rule(self.moisture['dry'] & self.temp['warm'], self.duration['medium']),
             ctrl.Rule(self.moisture['dry'] & self.temp['cool'], self.duration['short']),
@@ -70,6 +72,7 @@ class FuzzyIrrigationController:
             
             # NHÓM LUẬT ĐẤT HƠI ẨM (Moist)
             ctrl.Rule(self.moisture['moist'] & self.temp['hot'] & self.humidity['low'], self.duration['medium']),
+            ctrl.Rule(self.moisture['moist'] & self.temp['hot'] & self.humidity['medium'], self.duration['short']),
             ctrl.Rule(self.moisture['moist'] & self.temp['hot'] & self.humidity['high'], self.duration['short']),
             ctrl.Rule(self.moisture['moist'] & self.temp['warm'], self.duration['short']),
             ctrl.Rule(self.moisture['moist'] & self.temp['cool'], self.duration['none']),
