@@ -37,7 +37,7 @@ ChartJS.register(
   Legend
 );
 
-const API_URL = 'http://localhost:5000/api/stats';
+const API_URL = '/api/stats';
 
 function App() {
   const [data, setData] = useState(null);
