@@ -10,6 +10,8 @@ import {
   History,
   CircleGauge,
   Activity,
+  Waves,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -89,7 +91,7 @@ function App() {
     return { label: 'ĐẦY', class: 'success' };
   };
 
-  const waterStatus = getWaterStatus(current.water_level || 100);
+  const waterStatus = getWaterStatus(current.water_level ?? 100);
 
   // Format thời gian hiển thị tiếng Việt
   const timeStr = localTime.toLocaleTimeString('vi-VN', { hour12: false });
@@ -181,36 +183,56 @@ function App() {
             status={soilStatus}
             isAlert={current.soil_moisture * 100 < 45}
           />
-          <Card
-            title="Mực nước"
-            value={(current.water_level || 100).toFixed(0)}
-            unit="%"
-            icon={<CircleGauge color="#3b82f6" size={20} />}
-            status={waterStatus}
-            isAlert={current.water_level < 15}
-          />
         </div>
 
         {/* Control Area */}
         <div className="controls">
           <div className="pump-panel">
-            <h3>Điều khiển máy bơm</h3>
-            <div className={`pump-disk ${current.pump_status ? 'running' : ''}`}>
-              <Power size={32} />
-              <div className="glow"></div>
+            {/* Visual Tank Background */}
+            <div 
+              className="tank-background" 
+              style={{ height: `${current.water_level ?? 100}%` }}
+            >
+              <div className="water-wave"></div>
             </div>
-            <div className="pump-info">
-              <span className="status-label">{current.pump_status ? 'ĐANG BẬT' : 'ĐANG TẮT'}</span>
-              <p className="reason">{current.pump_status ? "Đã kích hoạt tưới nước" : "Độ ẩm đất tối ưu"}</p>
-            </div>
-            <div className="manual-switch">
-              <span>Chế độ thủ công</span>
-              <button
-                className={`toggle ${manualMode ? 'on' : ''}`}
-                onClick={() => setManualMode(!manualMode)}
-              >
-                <div className="ball"></div>
-              </button>
+
+            <div className="pump-content">
+              <div className="pump-header">
+                <h3>Điều khiển máy bơm</h3>
+                <div className="water-badge">
+                  <Waves size={14} />
+                  <span>{Math.round(current.water_level ?? 100)}%</span>
+                </div>
+              </div>
+
+              <div className={`pump-disk ${current.pump_status ? 'running' : ''}`}>
+                <Power size={32} />
+                <div className="glow"></div>
+              </div>
+
+              <div className="pump-info">
+                <span className="status-label">{current.pump_status ? 'ĐANG BẬT' : 'ĐANG TẮT'}</span>
+                {(current.water_level ?? 100) < 10 ? (
+                  <p className="reason warning-text">
+                    <AlertTriangle size={12} style={{display:'inline', marginRight:'4px'}}/>
+                    Hết nước - Đã ngắt bơm
+                  </p>
+                ) : (current.source || '').includes('CHÂM') ? (
+                  <p className="reason" style={{color:'#3b82f6'}}>Đang nạp nước vào bồn...</p>
+                ) : (
+                  <p className="reason">{current.pump_status ? "Đang tưới cây..." : "Trạng thái ổn định"}</p>
+                )}
+              </div>
+
+              <div className="manual-switch">
+                <span>Tham số AI</span>
+                <button
+                  className={`toggle ${manualMode ? 'on' : ''}`}
+                  onClick={() => setManualMode(!manualMode)}
+                >
+                  <div className="ball"></div>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -371,11 +393,116 @@ function App() {
         .ball { width: 20px; height: 20px; background: white; border-radius: 50%; position: absolute; left: 3px; top: 3px; transition: 0.3s; }
         .toggle.on .ball { left: 27px; }
 
+        .warning-text { color: #f59e0b !important; }
+
+        /* ===================== PUMP PANEL AS TANK ===================== */
+        .pump-panel {
+          background: #0a0a0c;
+          border-radius: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          min-height: 420px;
+          box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .tank-background {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          background: linear-gradient(180deg, #1d4ed8 0%, #1e3a8a 100%);
+          transition: height 1.5s cubic-bezier(0.19, 1, 0.22, 1);
+          z-index: 1;
+          box-shadow: 0 -4px 15px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Nắp bồn hoặc viền trên */
+        .tank-background::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          background: rgba(255, 255, 255, 0.4);
+          box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .water-wave {
+          position: absolute;
+          top: -20px;
+          left: 0;
+          width: 200%;
+          height: 25px;
+          background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5,73.84-4.36,147.54,16.88,218.2,35.26,69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113,14.29,1200,52.47V0Z" fill="%231d4ed8" opacity="0.6"></path></svg>');
+          animation: wave-slide 4s linear infinite;
+        }
+
+        @keyframes wave-slide {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+
+        .pump-content {
+          position: relative;
+          z-index: 2;
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 20px;
+          height: 100%;
+          background: linear-gradient(180deg, rgba(10, 10, 12, 0) 0%, rgba(10, 10, 12, 0.6) 100%);
+          backdrop-filter: blur(1px); /* Nhìn xuyên qua nước */
+        }
+
+        .pump-header {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .water-badge {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(255, 255, 255, 0.1);
+          padding: 6px 12px;
+          border-radius: 12px;
+          color: #fff;
+          font-weight: 700;
+          font-size: 0.9rem;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(4px);
+        }
+
+        .pump-disk {
+          width: 140px;
+          height: 140px;
+          background: rgba(15, 15, 20, 0.9);
+          border: 3px solid rgba(255, 255, 255, 0.05);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #475569;
+          position: relative;
+          transition: all 0.5s;
+          margin: 10px 0;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        }
+        .pump-disk.running { color: #3b82f6; box-shadow: 0 0 40px rgba(59, 130, 246, 0.4); border-color: #3b82f6; }
+
         .loading { height: 100vh; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 500; color: #3b82f6; }
       `}</style>
     </div>
   );
 }
+
 
 function Card({ title, value, unit, icon, status, isAlert }) {
   return (
