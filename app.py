@@ -91,12 +91,16 @@ def start_simulation():
 
             sim_soil = max(0.05, min(0.95, sim_soil))
 
-            # HỎI BỘ NÃO AI (Phần quyết định Có/Không)
-            decision = mlp.decide(current_temp, current_humid, row['Precipitation_mm'], sim_soil)
-            probs = mlp.get_probabilities(current_temp, current_humid, row['Precipitation_mm'], sim_soil)
+            # 1. DỰ BÁO TƯƠNG LAI (Dùng MLP)
+            # Input: Temp, Humidity, Current Soil (Scale 0-100)
+            future_soil = mlp.predict(current_temp, current_humid, sim_soil * 100)
 
-            # TÍNH TOÁN THỜI LƯỢNG TƯỚI BẰNG LOGIC MỜ (Phần tối ưu hóa)
-            duration = fuzzy.decide(sim_soil, current_temp, row['Precipitation_mm'], current_humid)
+            # 2. TÍNH TOÁN QUYẾT ĐỊNH (Dùng Logic Mờ)
+            # Input: Current Soil (0-1), Future Soil (0-100)
+            duration = fuzzy.decide(sim_soil, future_soil)
+            
+            # 3. QUYẾT ĐỊNH BẬT/TẮT
+            decision = 1 if duration > 0 else 0
 
             # ----------------------------------------------------------------
             # CƯỠNG BỨC TẮT BƠM NẾU HẾT NƯỚC hoặc đang châm nước
@@ -133,8 +137,8 @@ def start_simulation():
                 "soil_moisture": round(sim_soil, 2),
                 "water_level": round(sim_water, 1),
                 "pump_status": int(decision),
-                "pump_duration": round(duration, 1) if decision == 1 else 0.0,
-                "ai_confidence": round(max(probs) * 100, 1),
+                "pump_duration": round(duration, 1),
+                "ai_confidence": 100.0, # Fuzzy logic là deterministic dựa trên rules
                 "source": sim_source
             }
 
@@ -177,10 +181,14 @@ def handle_hardware():
         rain = float(data.get('rain_mm', 0.0))
         water = float(data.get('water_level', 100.0))
 
-        # 1. Hỏi AI (MLP quyết định Có/Không)
-        decision = mlp.decide(temp, humidity, rain, soil)
-        # 2. Tính toán thời lượng bằng Logic mờ
-        duration = fuzzy.decide(soil, temp, rain, humidity)
+        # 1. DỰ BÁO TƯƠNG LAI (Dùng MLP)
+        future_soil = mlp.predict(temp, humidity, soil * 100)
+
+        # 2. TÍNH TOÁN QUYẾT ĐỊNH (Dùng Logic Mờ)
+        duration = fuzzy.decide(soil, future_soil)
+        
+        # 3. QUYẾT ĐỊNH BẬT/TẮT
+        decision = 1 if duration > 0 else 0
         
         # 3. Logic bảo vệ: Nếu mực nước quá thấp (< 10%), không cho phép bật máy bơm
         if water < 10:
@@ -210,8 +218,8 @@ def handle_hardware():
         
         return jsonify({
             "status": "success",
-            "pump_action": decision, # 1 là bật, 0 là tắt
-            "pump_duration": duration if decision == 1 else 0.0, # Số phút cần tưới
+            "pump_on": bool(decision), # Trả về true/false theo code ESP32
+            "irrigation_duration": float(duration / 60.0), # Đổi từ giây sang phút cho ESP32
             "message": "AI Brain processed successfully"
         })
     
