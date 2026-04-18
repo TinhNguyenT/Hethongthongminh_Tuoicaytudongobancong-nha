@@ -3,7 +3,6 @@ import axios from 'axios';
 import {
   Thermometer,
   Droplets,
-  CloudRain,
   Cpu,
   Power,
   Timer,
@@ -169,12 +168,7 @@ function App() {
             unit="%"
             icon={<Droplets color="#3b82f6" size={20} />}
           />
-          <Card
-            title="Lượng mưa"
-            value={current.rain_mm}
-            unit=" mm"
-            icon={<CloudRain color="#94a3b8" size={20} />}
-          />
+
           <Card
             title="Độ ẩm đất"
             value={(current.soil_moisture * 100).toFixed(1)}
@@ -286,7 +280,7 @@ function App() {
 
         .sensor-grid {
           display: grid;
-          grid-template-columns: repeat(5, 1fr);
+          grid-template-columns: repeat(3, 1fr);
           gap: 20px;
         }
 

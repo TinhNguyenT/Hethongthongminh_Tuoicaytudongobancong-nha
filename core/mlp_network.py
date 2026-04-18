@@ -46,7 +46,7 @@ class MLPPredictor:
         # Giới hạn trong khoảng vật lý [0, 100]
         return float(np.clip(prediction, 0, 100))
 
-    def decide(self, temp, humidity, rain, current_soil):
+    def decide(self, temp, humidity, current_soil):
         """
         Hàm cũ để tương thích với app.py hiện tại (nếu cần). 
         Tuy nhiên, logic mới sẽ dùng predict() rồi quăng vào Fuzzy.

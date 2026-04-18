@@ -22,7 +22,6 @@ system_data = {
         "timestamp": "N/A",
         "air_temp": 30.0,
         "air_humidity": 60.0,
-        "rain_mm": 0.0,
         "soil_moisture": 0.5,
         "water_level": 85.0,
         "pump_status": 0,
@@ -133,7 +132,6 @@ def start_simulation():
                 "timestamp": time.strftime("%H:%M:%S"),
                 "air_temp": round(current_temp, 1),
                 "air_humidity": round(current_humid, 1),
-                "rain_mm": 0.0, # Dataset mới không có cột mưa
                 "soil_moisture": round(sim_soil, 2),
                 "water_level": round(sim_water, 1),
                 "pump_status": int(decision),
@@ -178,7 +176,6 @@ def handle_hardware():
         temp = float(data.get('temp', 25.0))
         humidity = float(data.get('humidity', 60.0))
         soil = float(data.get('soil_moisture', 0.5)) / 100.0 # Chuyển về 0-1.0
-        rain = float(data.get('rain_mm', 0.0))
         water = float(data.get('water_level', 100.0))
 
         # 1. DỰ BÁO TƯƠNG LAI (Dùng MLP)
@@ -200,7 +197,6 @@ def handle_hardware():
             "timestamp": time.strftime("%H:%M:%S"),
             "air_temp": temp,
             "air_humidity": humidity,
-            "rain_mm": rain,
             "soil_moisture": soil,
             "water_level": water,
             "pump_status": decision,
