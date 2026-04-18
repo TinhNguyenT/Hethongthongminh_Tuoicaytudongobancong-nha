@@ -43,3 +43,26 @@ Link: http://127.0.0.1:5000
 
 ---
 
+Người 1: Xây dựng Module MLP (Mạng nơ-ron dự báo)
+
+
+Nhiệm vụ: Không dùng MLP để phân loại (0/1) nữa, mà dùng nó để dự báo (Regression/Forecasting) giống như cách thầy dự báo nhiệt độ.
+
+Đầu vào (Input): Nhiệt độ, Độ ẩm không khí hiện tại.
+
+Đầu ra (Output): Dự báo Độ ẩm đất trong 1 giờ tới (Hoặc dự báo khả năng có mưa).
+
+Bản chất: Module này giúp hệ thống "nhìn trước" được thời tiết để không tưới dư thừa.
+
+Người 2: Xây dựng Module FLC (Logic Mờ)
+
+
+Nhiệm vụ: Tạo bộ luật điều khiển để ra lệnh cho máy bơm.
+
+Đầu vào (Input): 1. Độ ẩm đất hiện tại (từ cảm biến).
+2. Độ ẩm đất dự báo (nhận từ người 1).
+
+Đầu ra (Output): Thời gian bật bơm (Ví dụ: Tắt, Bơm 10 giây, Bơm 30 giây).
+
+
+Bản chất: Ví dụ luật mờ: NẾU đất hiện tại "Hơi khô" VÀ dự báo 1 giờ tới "rất khô" THÌ bơm "30 giây".
