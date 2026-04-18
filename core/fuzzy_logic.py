@@ -60,7 +60,12 @@ class FuzzyIrrigationController:
             self.simulator.input['hien_tai'] = current_soil
             self.simulator.input['tuong_lai'] = predicted_soil
             self.simulator.compute()
-            return self.simulator.output['thoi_gian_bom']
+            pump_duration = self.simulator.output['thoi_gian_bom']
+            # Safety filter: Centroid defuzzification near zero still outputs ~1-2s.
+            # Any result below 2s is treated as "OFF" to prevent phantom pump activation.
+            if pump_duration < 2.0:
+                pump_duration = 0.0
+            return pump_duration
         except Exception as e:
             # Trường hợp không khớp luật nào hoặc lỗi tính toán
             print(f"Fuzzy Compute Error: {e}")

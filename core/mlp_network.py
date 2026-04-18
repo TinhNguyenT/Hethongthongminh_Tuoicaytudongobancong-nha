@@ -1,6 +1,7 @@
 import joblib
 import os
 import numpy as np
+import pandas as pd
 
 class MLPPredictor:
     def __init__(self, model_path='data/mlp_forecasting.pkl'):
@@ -32,10 +33,12 @@ class MLPPredictor:
             # Fallback nếu không có model (giữ nguyên độ ẩm hiện tại)
             return current_soil
 
-        # Chuẩn bị dữ liệu đầu vào (phải đúng thứ tự FEATURES trong training)
-        # FEATURES = ['Temperature_C', 'humidity', 'water_level']
-        # Lưu ý: water_level trong training chính là soil moisture
-        input_data = np.array([[temp, humidity, current_soil]])
+        # Bọc trong DataFrame với đúng tên cột như lúc fit scaler
+        # FEATURES order: ['Temperature_C', 'humidity', 'water_level']
+        input_data = pd.DataFrame(
+            [[temp, humidity, current_soil]],
+            columns=self.features
+        )
         
         # Scale dữ liệu
         input_scaled = self.scaler.transform(input_data)
