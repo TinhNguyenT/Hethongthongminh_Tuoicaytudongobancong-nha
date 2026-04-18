@@ -35,8 +35,8 @@ system_data = {
 # --- CƠ CHẾ GIẢ LẬP DỮ LIỆU (Để chạy demo khi chưa có ESP32) ---
 def start_simulation():
     global system_data
-    # Load dữ liệu thời tiết thực tế 2026 để demo
-    weather_2026 = pd.read_csv('data/data_raw/vietnam_weather_2026.csv')
+    # Load dữ liệu IoT thực tế đã qua xử lý
+    iot_history = pd.read_csv('data/cleaned_iot_data.csv')
     row_idx = 0
     sim_soil = 0.65      # Bắt đầu ở mức độ ẩm 65%
     sim_water = 100.0    # Bắt đầu ở mức nước 100% trong bình
@@ -45,7 +45,7 @@ def start_simulation():
 
     while True:
         try:
-            row = weather_2026.iloc[row_idx % len(weather_2026)]
+            row = iot_history.iloc[row_idx % len(iot_history)]
 
             # ----------------------------------------------------------------
             # XỬ LÝ CHÂM NƯỚC: Nếu nước < 20% thì bắt đầu châm đầy (mất 5 tick)
@@ -76,8 +76,8 @@ def start_simulation():
             temp_noise = np.random.uniform(-0.8, 0.8)
             humid_noise = np.random.uniform(-1.5, 1.5)
             
-            current_temp = row['Temp_C'] + temp_noise
-            current_humid = row['Humidity_pct'] + humid_noise
+            current_temp = row['Temperature_C'] + temp_noise
+            current_humid = row['humidity'] + humid_noise
             
             # Thêm nhiễu vào quá trình vật lý (bay hơi và tưới)
             soil_noise = np.random.uniform(-0.005, 0.005)
@@ -126,14 +126,14 @@ def start_simulation():
             elif forced_off:
                 sim_source = "CẢNH BÁO: BÌNH NƯỚC ĐÃ CẠN"
             else:
-                sim_source = "NASA 2026 (SIMULATED + NOISE)"
+                sim_source = "LỊCH SỬ DỮ LIỆU IOT (CLEANED)"
 
             # Cập nhật trạng thái
             current_data = {
                 "timestamp": time.strftime("%H:%M:%S"),
                 "air_temp": round(current_temp, 1),
                 "air_humidity": round(current_humid, 1),
-                "rain_mm": round(row['Precipitation_mm'], 1),
+                "rain_mm": 0.0, # Dataset mới không có cột mưa
                 "soil_moisture": round(sim_soil, 2),
                 "water_level": round(sim_water, 1),
                 "pump_status": int(decision),
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     print("\n" + "="*50)
     print("AI SMART IRRIGATION DASHBOARD IS RUNNING")
     if config.USE_SIMULATION:
-        print("Mode: SIMULATION (NASA 2026 Data)")
+        print("Mode: SIMULATION (Historical cleaned_iot_data.csv)")
     else:
         print("Mode: HARDWARE (Waiting for ESP32 on /api/hardware)")
     print("Endpoint Hardware: /api/hardware")
